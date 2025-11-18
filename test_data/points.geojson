@@ -1,0 +1,71 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [139.7671, 35.6812]
+      },
+      "properties": {
+        "name": "Tokyo",
+        "population": 13960000
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [139.6503, 35.6762]
+      },
+      "properties": {
+        "name": "Shinjuku",
+        "population": 339000
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [139.7454, 35.6586]
+      },
+      "properties": {
+        "name": "Roppongi",
+        "population": 45000
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-0.1276, 51.5074]
+      },
+      "properties": {
+        "name": "London",
+        "population": 8982000
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-74.0060, 40.7128]
+      },
+      "properties": {
+        "name": "New York",
+        "population": 8336000
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [2.3522, 48.8566]
+      },
+      "properties": {
+        "name": "Paris",
+        "population": 2161000
+      }
+    }
+  ]
+}
