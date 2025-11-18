@@ -29,8 +29,6 @@ interface ErrorMessage {
   message: string
 }
 
-type WorkerMessage = ProgressMessage | ResultMessage | ErrorMessage
-
 // Wasm初期化フラグ
 let wasmInitialized = false
 
