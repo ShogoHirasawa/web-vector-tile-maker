@@ -5,9 +5,9 @@ import wasm from 'vite-plugin-wasm'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), wasm()],
-  base: '/vector-tile-builder/',
+  base: '/web-vector-tile-maker/',
   build: {
-    outDir: '../docs',
+    outDir: 'dist',
     emptyOutDir: true,
   },
   worker: {

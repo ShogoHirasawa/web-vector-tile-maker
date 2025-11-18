@@ -102,19 +102,48 @@ cd core
 cargo test
 ```
 
-## 🌐 フェーズ2: Wasm化（開発中）
+## 🌐 フェーズ2: Wasm化 + Webアプリ
+
+### ローカル開発
 
 ```bash
+# 1. Wasmビルド
 cd core
-
-# Wasmビルド
 wasm-pack build --target web --out-dir ../frontend/src/wasm
 
-# フロントエンド起動
+# 2. フロントエンド起動
 cd ../frontend
 npm install
 npm run dev
 ```
+
+ブラウザで http://localhost:5173 を開く
+
+### プロダクションビルド
+
+```bash
+# Wasmビルド
+cd core
+wasm-pack build --target web --out-dir ../frontend/src/wasm
+
+# フロントエンドビルド
+cd ../frontend
+npm run build
+
+# 結果は frontend/dist/ に出力されます
+```
+
+### GitHub Pagesへのデプロイ
+
+```bash
+git add .
+git commit -m "Update build"
+git push origin main
+```
+
+GitHub Actionsが自動的にビルド＆デプロイを実行します。
+デプロイ後、以下のURLでアクセスできます:
+https://shogohirasawa.github.io/web-vector-tile-maker/
 
 ## 📝 サポートするGeoJSON形式
 
