@@ -7,7 +7,7 @@ import { getTileFromStore } from './tileStore.ts'
 
 // Register MapLibre custom protocol (mem://)
 // This allows MapLibre to load tiles from memory
-addProtocol('mem', (params, abortController) => {
+addProtocol('mem', (params, _abortController) => {
   // Expected URL format: "mem://tiles/{z}/{x}/{y}.pbf"
   const match = params.url.match(/mem:\/\/tiles\/(\d+)\/(\d+)\/(\d+)\.pbf/);
   
