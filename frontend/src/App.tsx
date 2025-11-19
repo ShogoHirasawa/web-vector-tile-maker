@@ -188,7 +188,7 @@ function App() {
 
           <div className="form-group">
             <label>
-              Minimum Zoom Level:
+              Minimum Zoom Level (0-15):
               <input
                 type="number"
                 min="0"
@@ -207,7 +207,7 @@ function App() {
 
           <div className="form-group">
             <label>
-              Maximum Zoom Level:
+              Maximum Zoom Level (0-15):
               <input
                 type="number"
                 min="0"
