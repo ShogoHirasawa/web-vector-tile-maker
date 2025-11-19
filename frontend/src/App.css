@@ -153,3 +153,32 @@ input[type="file"] {
 input[type="file"]:hover {
   border-color: #61dafb;
 }
+
+footer {
+  text-align: center;
+  padding: 2rem 0;
+  margin-top: 3rem;
+  border-top: 1px solid #333;
+}
+
+.github-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #888;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.github-link:hover {
+  color: #61dafb;
+}
+
+.github-link svg {
+  flex-shrink: 0;
+}
+
+.github-link span {
+  font-family: monospace;
+}
