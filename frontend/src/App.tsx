@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import JSZip from "jszip";
 import "./App.css";
 
@@ -22,38 +22,8 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const workerRef = useRef<Worker | null>(null);
 
-  // Initialize WebWorker
-  useEffect(() => {
-    workerRef.current = new Worker(new URL("./worker.ts", import.meta.url), {
-      type: "module",
-    });
-
-    workerRef.current.onmessage = (event) => {
-      const message = event.data;
-
-      if (message.type === "progress") {
-        setProgress(message.value);
-      } else if (message.type === "result-pbf") {
-        handleTilesGenerated(message.tiles, message.tilejson);
-      } else if (message.type === "error") {
-        setError(message.message);
-        setIsProcessing(false);
-      }
-    };
-
-    workerRef.current.onerror = (error) => {
-      console.error("Worker error:", error);
-      setError("An error occurred in Worker");
-      setIsProcessing(false);
-    };
-
-    return () => {
-      workerRef.current?.terminate();
-    };
-  }, []);
-
   // Handle tile generation completion
-  const handleTilesGenerated = async (
+  const handleTilesGenerated = useCallback(async (
     tiles: Array<{ path: string; bytes: Uint8Array }>,
     tilejson: string
   ) => {
@@ -94,7 +64,37 @@ function App() {
       setError("Failed to create ZIP file");
       setIsProcessing(false);
     }
-  };
+  }, [settings]);
+
+  // Initialize WebWorker
+  useEffect(() => {
+    workerRef.current = new Worker(new URL("./worker.ts", import.meta.url), {
+      type: "module",
+    });
+
+    workerRef.current.onmessage = (event) => {
+      const message = event.data;
+
+      if (message.type === "progress") {
+        setProgress(message.value);
+      } else if (message.type === "result-pbf") {
+        handleTilesGenerated(message.tiles, message.tilejson);
+      } else if (message.type === "error") {
+        setError(message.message);
+        setIsProcessing(false);
+      }
+    };
+
+    workerRef.current.onerror = (error) => {
+      console.error("Worker error:", error);
+      setError("An error occurred in Worker");
+      setIsProcessing(false);
+    };
+
+    return () => {
+      workerRef.current?.terminate();
+    };
+  }, [handleTilesGenerated]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
