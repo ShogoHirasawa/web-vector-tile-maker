@@ -155,7 +155,7 @@ function App() {
           <h2>📝 How to Use</h2>
           <ol>
             <li>Select a GeoJSON file (supports Point, LineString, Polygon)</li>
-            <li>Configure zoom levels and layer name</li>
+            <li>Configure zoom levels (0-15) and layer name</li>
             <li>Click "Generate Tiles" button</li>
             <li>Download the generated tiles</li>
           </ol>
@@ -171,7 +171,11 @@ function App() {
           />
           {file && (
             <div className="file-info">
-              ✓ {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+              ✓ {file.name} (
+              {file.size >= 1024 * 1024
+                ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
+                : `${(file.size / 1024).toFixed(2)} KB`}
+              )
             </div>
           )}
         </section>
