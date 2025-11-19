@@ -63,12 +63,15 @@ function App() {
       // Create ZIP file
       const zip = new JSZip();
 
-      // Add metadata.json (tippecanoe format)
-      zip.file("metadata.json", tilejson);
+      // Create folder name based on layer name and zoom levels
+      const folderName = `tiles_${settings.layerName}_${settings.minZoom}-${settings.maxZoom}`;
 
-      // Add tiles
+      // Add metadata.json (tippecanoe format) inside the folder
+      zip.file(`${folderName}/metadata.json`, tilejson);
+
+      // Add tiles inside the folder
       for (const tile of tiles) {
-        zip.file(tile.path, tile.bytes);
+        zip.file(`${folderName}/${tile.path}`, tile.bytes);
       }
 
       // Generate ZIP
