@@ -31,6 +31,10 @@ function App() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
+  const [generatedTiles, setGeneratedTiles] = useState<{
+    tiles: Array<{ path: string; bytes: Uint8Array }>;
+    tilejson: string;
+  } | null>(null);
   const workerRef = useRef<Worker | null>(null);
 
   // Handle tile generation completion
@@ -41,7 +45,7 @@ function App() {
     try {
       console.log(`Processing ${tiles.length} tiles...`);
 
-      // 【新機能】tileStoreを構築してプレビュー表示
+      // Build tileStore and display preview
       const tileStore: TileStore = new Map();
       for (const tile of tiles) {
         // path = "z/x/y.pbf" → key = "z/x/y"
@@ -49,11 +53,11 @@ function App() {
         tileStore.set(key, tile.bytes);
       }
       
-      // tileStoreをセット
+      // Set tileStore
       setTileStore(tileStore);
       console.log(`[App] TileStore set with ${tileStore.size} tiles`);
 
-      // metadataを取得してプレビュー用データを作成
+      // Retrieve metadata and create preview data
       const metadata = JSON.parse(tilejson);
       const center = metadata.center
         ? metadata.center.split(',').map(Number).slice(0, 2)
@@ -69,8 +73,26 @@ function App() {
       });
       console.log('[App] Preview data set:', { center, zoom: centerZoom });
 
-      // 【既存機能】ZIPダウンロード（変更なし）
-      console.log(`Generating ZIP with ${tiles.length} tiles...`);
+      // Save tile data
+      setGeneratedTiles({ tiles, tilejson });
+
+      setIsProcessing(false);
+    } catch (err) {
+      console.error("Error processing tiles:", err);
+      setError("Failed to process tiles");
+      setIsProcessing(false);
+    }
+  }, [settings]);
+
+  // Handle ZIP download
+  const handleDownloadZip = useCallback(async () => {
+    if (!generatedTiles) {
+      setError("No tiles generated yet");
+      return;
+    }
+
+    try {
+      console.log(`Generating ZIP with ${generatedTiles.tiles.length} tiles...`);
 
       // Create ZIP file
       const zip = new JSZip();
@@ -79,10 +101,10 @@ function App() {
       const folderName = `tiles_${settings.layerName}_${settings.minZoom}-${settings.maxZoom}`;
 
       // Add metadata.json (tippecanoe format) inside the folder
-      zip.file(`${folderName}/metadata.json`, tilejson);
+      zip.file(`${folderName}/metadata.json`, generatedTiles.tilejson);
 
       // Add tiles inside the folder
-      for (const tile of tiles) {
+      for (const tile of generatedTiles.tiles) {
         zip.file(`${folderName}/${tile.path}`, tile.bytes);
       }
 
@@ -100,13 +122,11 @@ function App() {
       URL.revokeObjectURL(url);
 
       console.log("Download started!");
-      setIsProcessing(false);
     } catch (err) {
       console.error("Error creating ZIP:", err);
       setError("Failed to create ZIP file");
-      setIsProcessing(false);
     }
-  }, [settings]);
+  }, [generatedTiles, settings]);
 
   // Initialize WebWorker
   useEffect(() => {
@@ -326,7 +346,16 @@ function App() {
 
         {previewData && (
           <section className="preview-section">
-            <h2>3. Preview</h2>
+            <div className="preview-header">
+              <h2>3. Preview</h2>
+              <button 
+                onClick={handleDownloadZip} 
+                className="download-button"
+                disabled={!generatedTiles}
+              >
+                📦 Download ZIP
+              </button>
+            </div>
             <MapPreview {...previewData} />
           </section>
         )}
