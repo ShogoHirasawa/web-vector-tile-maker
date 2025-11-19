@@ -159,10 +159,6 @@ function App() {
             <li>Click "Generate Tiles" button</li>
             <li>Download the generated tiles</li>
           </ol>
-          
-          <p className="note">
-            ✅ Wasm integration complete! Generate vector tiles in your browser.
-          </p>
         </section>
 
         <section className="upload-section">
