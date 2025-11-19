@@ -11,7 +11,6 @@ Upload GeoJSON and convert it to tiles directly in your browser for download.
 
 - **Rust + WebAssembly**: Core tile generation processing
 - **React + TypeScript + Vite**: Frontend UI
-- **MapLibre GL JS**: Map display (preview feature)
 
 ## 📦 Project Structure
 
