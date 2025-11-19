@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import JSZip from "jszip";
 import "./App.css";
-import { MapPreview } from "./MapPreview";
+import MapPreview from "./MapPreview.tsx";
 import { setTileStore, type TileStore } from "./tileStore";
 
 interface GenerationSettings {
@@ -43,21 +43,18 @@ function App() {
     tilejson: string
   ) => {
     try {
-      console.log(`Processing ${tiles.length} tiles...`);
-
-      // Build tileStore and display preview
+      // Build tile store for preview
       const tileStore: TileStore = new Map();
       for (const tile of tiles) {
-        // path = "z/x/y.pbf" → key = "z/x/y"
+        // Convert path "z/x/y.pbf" to key "z/x/y"
         const key = tile.path.replace('.pbf', '');
         tileStore.set(key, tile.bytes);
       }
       
-      // Set tileStore
+      // Set tile store for MapLibre
       setTileStore(tileStore);
-      console.log(`[App] TileStore set with ${tileStore.size} tiles`);
 
-      // Retrieve metadata and create preview data
+      // Parse metadata and create preview configuration
       const metadata = JSON.parse(tilejson);
       const center = metadata.center
         ? metadata.center.split(',').map(Number).slice(0, 2)
@@ -71,9 +68,8 @@ function App() {
         minZoom: settings.minZoom,
         maxZoom: settings.maxZoom,
       });
-      console.log('[App] Preview data set:', { center, zoom: centerZoom });
 
-      // Save tile data
+      // Save tile data for download button
       setGeneratedTiles({ tiles, tilejson });
 
       setIsProcessing(false);
@@ -92,8 +88,6 @@ function App() {
     }
 
     try {
-      console.log(`Generating ZIP with ${generatedTiles.tiles.length} tiles...`);
-
       // Create ZIP file
       const zip = new JSZip();
 
@@ -120,8 +114,6 @@ function App() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-
-      console.log("Download started!");
     } catch (err) {
       console.error("Error creating ZIP:", err);
       setError("Failed to create ZIP file");
@@ -182,11 +174,6 @@ function App() {
     setError(null);
 
     try {
-      console.log("タイル生成開始:", {
-        file: file.name,
-        settings,
-      });
-
       // Read file as ArrayBuffer
       const arrayBuffer = await file.arrayBuffer();
 

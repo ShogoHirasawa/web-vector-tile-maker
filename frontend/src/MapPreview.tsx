@@ -10,16 +10,14 @@ interface MapPreviewProps {
   maxZoom: number;
 }
 
-export function MapPreview({ center, zoom, layerName, minZoom, maxZoom }: MapPreviewProps) {
+function MapPreview({ center, zoom, layerName, minZoom, maxZoom }: MapPreviewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
 
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
-    console.log('[MapPreview] Initializing map...', { center, zoom, layerName });
-
-    // MapLibreインスタンス作成
+    // Initialize MapLibre instance
     map.current = new MapLibreMap({
       container: mapContainer.current,
       style: {
@@ -100,22 +98,11 @@ export function MapPreview({ center, zoom, layerName, minZoom, maxZoom }: MapPre
       zoom: zoom,
     });
 
-    // マップロード完了イベント
-    map.current.on('load', () => {
-      console.log('[MapPreview] Map loaded successfully');
-    });
-
-    // エラーハンドリング
-    map.current.on('error', (e) => {
-      console.error('[MapPreview] Map error:', e);
-    });
-
-    // クリーンアップ
+    // Cleanup on unmount
     return () => {
       if (map.current) {
         map.current.remove();
         map.current = null;
-        console.log('[MapPreview] Map removed');
       }
     };
   }, [center, zoom, layerName, minZoom, maxZoom]);
@@ -132,3 +119,5 @@ export function MapPreview({ center, zoom, layerName, minZoom, maxZoom }: MapPre
     />
   );
 }
+
+export default MapPreview;

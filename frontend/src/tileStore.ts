@@ -1,30 +1,28 @@
-// MapLibre プレビュー用のタイルストア管理
+// Tile store management for MapLibre preview
 
-// TileStore型定義: z/x/y をキーとして Uint8Array を保持
+// TileStore type: stores Uint8Array tiles with "z/x/y" keys
 export type TileStore = Map<string, Uint8Array>;
 
-// グローバルなtileStore
+// Global tile store
 let currentTileStore: TileStore | null = null;
 
 /**
- * tileStoreをセット
- * @param store タイルストア
+ * Set the tile store
+ * @param store Tile store to set
  */
 export function setTileStore(store: TileStore): void {
   currentTileStore = store;
-  console.log(`[TileStore] Set with ${store.size} tiles`);
 }
 
 /**
- * tileStoreから指定座標のタイルを取得
- * @param z ズームレベル
- * @param x X座標
- * @param y Y座標
- * @returns タイルデータ、存在しない場合はnull
+ * Get a tile from the store by coordinates
+ * @param z Zoom level
+ * @param x Tile X coordinate
+ * @param y Tile Y coordinate
+ * @returns Tile data, or null if not found
  */
 export function getTileFromStore(z: number, x: number, y: number): Uint8Array | null {
   if (!currentTileStore) {
-    console.warn('[TileStore] Not initialized');
     return null;
   }
   
@@ -32,7 +30,6 @@ export function getTileFromStore(z: number, x: number, y: number): Uint8Array | 
   const tile = currentTileStore.get(key);
   
   if (!tile) {
-    console.warn(`[TileStore] Tile not found: ${key}`);
     return null;
   }
   
@@ -40,9 +37,8 @@ export function getTileFromStore(z: number, x: number, y: number): Uint8Array | 
 }
 
 /**
- * tileStoreをクリア
+ * Clear the tile store
  */
 export function clearTileStore(): void {
   currentTileStore = null;
-  console.log('[TileStore] Cleared');
 }

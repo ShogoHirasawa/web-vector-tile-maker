@@ -5,10 +5,10 @@ import App from './App.tsx'
 import './index.css'
 import { getTileFromStore } from './tileStore.ts'
 
-// MapLibreカスタムプロトコル登録（mem://）
-// これにより、メモリ上のタイルをMapLibreに読み込ませることができる
+// Register MapLibre custom protocol (mem://)
+// This allows MapLibre to load tiles from memory
 addProtocol('mem', (params, abortController) => {
-  // params.url の形式: "mem://tiles/{z}/{x}/{y}.pbf"
+  // Expected URL format: "mem://tiles/{z}/{x}/{y}.pbf"
   const match = params.url.match(/mem:\/\/tiles\/(\d+)\/(\d+)\/(\d+)\.pbf/);
   
   return new Promise((resolve, reject) => {
@@ -25,12 +25,10 @@ addProtocol('mem', (params, abortController) => {
       return;
     }
     
-    // Uint8ArrayをArrayBufferに変換して返す
+    // Convert Uint8Array to ArrayBuffer and return
     resolve({ data: tileData.buffer });
   });
 });
-
-console.log('[Main] MapLibre custom protocol "mem://" registered');
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

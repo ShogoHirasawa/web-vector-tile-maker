@@ -157,7 +157,6 @@ npm run build
 ### 📋 Future Plans
 
 - [ ] PMTiles format support
-- [ ] Data preview feature
 - [ ] Drag & drop file upload
 
 ## 📄 License
