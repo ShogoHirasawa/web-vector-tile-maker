@@ -1,13 +1,13 @@
-// 座標投影モジュール
-// WGS84（経度緯度）→ WebMercator（x/y）変換
+// Coordinate projection module
+// WGS84 (lon/lat) → WebMercator (x/y) conversion
 
 use std::f64::consts::PI;
 
-/// WebMercator投影の定数
-const EARTH_RADIUS: f64 = 6378137.0; // 地球の半径（メートル）
+/// WebMercator projection constants
+const EARTH_RADIUS: f64 = 6378137.0; // Earth radius in meters
 const ORIGIN_SHIFT: f64 = 2.0 * PI * EARTH_RADIUS / 2.0;
 
-/// 経度緯度（WGS84）をWebMercatorのメートル座標に変換
+/// Convert lon/lat (WGS84) to WebMercator meters
 pub fn lonlat_to_meters(lon: f64, lat: f64) -> (f64, f64) {
     let mx = lon * ORIGIN_SHIFT / 180.0;
     let my = ((90.0 + lat) * PI / 360.0).tan().ln() / (PI / 180.0);
@@ -15,7 +15,7 @@ pub fn lonlat_to_meters(lon: f64, lat: f64) -> (f64, f64) {
     (mx, my)
 }
 
-/// WebMercatorのメートル座標からタイル座標に変換
+/// Convert WebMercator meters to tile coordinates
 pub fn meters_to_tile(mx: f64, my: f64, zoom: u8) -> (u32, u32) {
     let resolution = get_resolution(zoom);
     let px = (mx + ORIGIN_SHIFT) / resolution;
@@ -28,18 +28,18 @@ pub fn meters_to_tile(mx: f64, my: f64, zoom: u8) -> (u32, u32) {
     (tx, ty)
 }
 
-/// 経度緯度からタイル座標に直接変換（標準的な方法）
+/// Direct conversion from lon/lat to tile coordinates (standard method)
 pub fn lonlat_to_tile(lon: f64, lat: f64, zoom: u8) -> (u32, u32) {
     let n = 2_f64.powi(zoom as i32);
     
-    // X座標: 経度を正規化
+    // X coordinate: normalize longitude
     let tx = ((lon + 180.0) / 360.0 * n).floor() as u32;
     
-    // Y座標: WebMercator投影
+    // Y coordinate: WebMercator projection
     let lat_rad = lat * PI / 180.0;
     let ty = ((1.0 - (lat_rad.tan() + (1.0 / lat_rad.cos())).ln() / PI) / 2.0 * n).floor() as u32;
     
-    // タイル数の範囲内に制限
+    // Clamp to tile count range
     let max_tile = n as u32 - 1;
     let tx = tx.min(max_tile);
     let ty = ty.min(max_tile);
@@ -47,7 +47,7 @@ pub fn lonlat_to_tile(lon: f64, lat: f64, zoom: u8) -> (u32, u32) {
     (tx, ty)
 }
 
-/// タイル座標からWebMercatorのメートル座標（境界）を取得
+/// Get WebMercator meter bounds from tile coordinates
 pub fn tile_bounds(tx: u32, ty: u32, zoom: u8) -> (f64, f64, f64, f64) {
     let resolution = get_resolution(zoom);
     let tile_size = 256.0;
@@ -60,24 +60,24 @@ pub fn tile_bounds(tx: u32, ty: u32, zoom: u8) -> (f64, f64, f64, f64) {
     (min_x, min_y, max_x, max_y)
 }
 
-/// WebMercatorメートル座標からタイル内のピクセル座標に変換
+/// Convert WebMercator meters to pixel coordinates within tile
 pub fn meters_to_pixel_in_tile(mx: f64, my: f64, tx: u32, ty: u32, zoom: u8) -> (f64, f64) {
     let (tile_min_x, tile_min_y, _, tile_max_y) = tile_bounds(tx, ty, zoom);
     let resolution = get_resolution(zoom);
     
     let px = (mx - tile_min_x) / resolution;
-    let py = (tile_max_y - my) / resolution;  // maxから引く（Y軸は上が正）
+    let py = (tile_max_y - my) / resolution;  // Subtract from max (Y-axis is positive upward)
     
     (px, py)
 }
 
-/// 指定されたズームレベルでの解像度（メートル/ピクセル）を取得
+/// Get resolution (meters/pixel) at specified zoom level
 fn get_resolution(zoom: u8) -> f64 {
     let initial_resolution = 2.0 * PI * EARTH_RADIUS / 256.0;
     initial_resolution / 2_f64.powi(zoom as i32)
 }
 
-/// タイルの数を取得（ズームレベルごと）
+/// Get tile count for given zoom level
 pub fn get_tile_count(zoom: u8) -> u32 {
     2_u32.pow(zoom as u32)
 }
@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn test_lonlat_to_meters() {
-        // 東京（139.7671, 35.6812）
+        // Tokyo (139.7671, 35.6812)
         let (mx, my) = lonlat_to_meters(139.7671, 35.6812);
         assert!(mx > 15_500_000.0 && mx < 15_600_000.0);
         assert!(my > 4_200_000.0 && my < 4_300_000.0);
@@ -96,12 +96,12 @@ mod tests {
 
     #[test]
     fn test_lonlat_to_tile() {
-        // ズームレベル0では全世界が1タイル
+        // At zoom level 0, entire world is 1 tile
         let (tx, ty) = lonlat_to_tile(0.0, 0.0, 0);
         assert_eq!(tx, 0);
         assert_eq!(ty, 0);
         
-        // ズームレベル1では東半球
+        // Eastern hemisphere at zoom level 1
         let (tx, ty) = lonlat_to_tile(90.0, 0.0, 1);
         assert_eq!(tx, 1);
     }

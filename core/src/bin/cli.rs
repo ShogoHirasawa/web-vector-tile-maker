@@ -10,63 +10,63 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     
     if args.len() < 5 {
-        eprintln!("使用方法: {} <geojson_file> <output_dir> <min_zoom> <max_zoom> [layer_name]", args[0]);
-        eprintln!("例: {} data.geojson output 0 5 mylayer", args[0]);
+        eprintln!("Usage: {} <geojson_file> <output_dir> <min_zoom> <max_zoom> [layer_name]", args[0]);
+        eprintln!("Example: {} data.geojson output 0 5 mylayer", args[0]);
         std::process::exit(1);
     }
     
     let geojson_path = &args[1];
     let output_dir = &args[2];
-    let min_zoom: u8 = args[3].parse().expect("min_zoomは数値で指定してください");
-    let max_zoom: u8 = args[4].parse().expect("max_zoomは数値で指定してください");
+    let min_zoom: u8 = args[3].parse().expect("min_zoom must be a number");
+    let max_zoom: u8 = args[4].parse().expect("max_zoom must be a number");
     let layer_name = if args.len() > 5 {
         &args[5]
     } else {
         "default"
     };
     
-    println!("🚀 ベクタータイル生成開始");
-    println!("  入力: {}", geojson_path);
-    println!("  出力: {}", output_dir);
-    println!("  ズーム: {} - {}", min_zoom, max_zoom);
-    println!("  レイヤー: {}", layer_name);
+    println!("🚀 Starting vector tile generation");
+    println!("  Input: {}", geojson_path);
+    println!("  Output: {}", output_dir);
+    println!("  Zoom: {} - {}", min_zoom, max_zoom);
+    println!("  Layer: {}", layer_name);
     
-    // GeoJSONファイルを読み込み
+    // Read GeoJSON file
     let geojson_bytes = fs::read(geojson_path)
-        .expect("GeoJSONファイルの読み込みに失敗しました");
+        .expect("Failed to read GeoJSON file");
     
-    println!("\n📖 GeoJSON解析中...");
+    println!("\n📖 Parsing GeoJSON...");
     
-    // タイル生成
+    // Generate tiles
     match generate_tiles(&geojson_bytes, min_zoom, max_zoom, layer_name) {
         Ok(tiles) => {
-            println!("✅ {}個のタイルを生成しました", tiles.len());
+            println!("✅ Generated {} tiles", tiles.len());
             
-            // 出力ディレクトリを作成
+            // Create output directory
             fs::create_dir_all(output_dir)
-                .expect("出力ディレクトリの作成に失敗しました");
+                .expect("Failed to create output directory");
             
-            // タイルを保存
-            println!("\n💾 タイル保存中...");
+            // Save tiles
+            println!("\n💾 Saving tiles...");
             for tile in tiles {
                 let tile_path = Path::new(output_dir).join(&tile.path);
                 
-                // ディレクトリを作成
+                // Create directory
                 if let Some(parent) = tile_path.parent() {
                     fs::create_dir_all(parent).ok();
                 }
                 
-                // タイルを書き込み
+                // Write tile
                 fs::write(&tile_path, &tile.data)
-                    .expect(&format!("タイルの保存に失敗: {}", tile.path));
+                    .expect(&format!("Failed to save tile: {}", tile.path));
                 
                 println!("  ✓ {}", tile.path);
             }
             
-            println!("\n✨ 完了しました！");
+            println!("\n✨ Complete!");
         }
         Err(e) => {
-            eprintln!("❌ エラー: {}", e);
+            eprintln!("❌ Error: {}", e);
             std::process::exit(1);
         }
     }

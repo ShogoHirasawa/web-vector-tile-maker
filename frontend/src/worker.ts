@@ -1,7 +1,7 @@
-// WebWorker: Wasmを使ったタイル生成処理
+// WebWorker: Tile generation using Wasm
 import init, { generate_pbf_tiles, type TileResult } from './wasm/vector_tile_core'
 
-// Workerメッセージの型定義
+// Worker message type definitions
 interface GenerateMessage {
   type: 'generate'
   payload: {
@@ -29,17 +29,17 @@ interface ErrorMessage {
   message: string
 }
 
-// Wasm初期化フラグ
+// Wasm initialization flag
 let wasmInitialized = false
 
-// tippecanoe形式のmetadata.jsonを生成
+// Generate metadata.json in tippecanoe format
 function generateTileJSON(metadata: any, minZoom: number, maxZoom: number, layerName: string): string {
   const { bounds, center } = metadata
   
-  // center_zoomを計算（中間ズームレベル）
+  // Calculate center_zoom (middle zoom level)
   const centerZoom = Math.floor((minZoom + maxZoom) / 2)
   
-  // tippecanoe形式のmetadata.json
+  // metadata.json in tippecanoe format
   const metadataJson = {
     name: layerName,
     description: `${layerName}`,
@@ -80,7 +80,7 @@ function generateTileJSON(metadata: any, minZoom: number, maxZoom: number, layer
   return JSON.stringify(metadataJson, null, 2)
 }
 
-// Wasmを初期化
+// Initialize Wasm
 async function initializeWasm() {
   if (wasmInitialized) return
   
@@ -95,15 +95,15 @@ async function initializeWasm() {
   }
 }
 
-// タイル生成処理
+// Tile generation process
 async function generateTiles(message: GenerateMessage) {
   try {
-    // Wasm初期化
+    // Initialize Wasm
     await initializeWasm()
     
     const { geojson, minZoom, maxZoom, layerName } = message.payload
     
-    // 進捗通知
+    // Progress notification
     postMessage({ type: 'progress', value: 10 } as ProgressMessage)
     
     console.log('[Worker] Starting tile generation...')
@@ -111,13 +111,13 @@ async function generateTiles(message: GenerateMessage) {
     console.log(`[Worker] Layer name: ${layerName}`)
     console.log(`[Worker] GeoJSON size: ${geojson.byteLength} bytes`)
     
-    // GeoJSONをUint8Arrayに変換
+    // Convert GeoJSON to Uint8Array
     const geojsonBytes = new Uint8Array(geojson)
     
-    // 進捗通知
+    // Progress notification
     postMessage({ type: 'progress', value: 30 } as ProgressMessage)
     
-    // Wasmでタイル生成
+    // Generate tiles with Wasm
     const result: TileResult = generate_pbf_tiles(
       geojsonBytes,
       minZoom,
@@ -127,10 +127,10 @@ async function generateTiles(message: GenerateMessage) {
     
     console.log(`[Worker] Generated ${result.count()} tiles`)
     
-    // 進捗通知
+    // Progress notification
     postMessage({ type: 'progress', value: 60 } as ProgressMessage)
     
-    // タイル情報を収集
+    // Collect tile information
     const tiles: Array<{ path: string; bytes: Uint8Array }> = []
     
     for (let i = 0; i < result.count(); i++) {
@@ -144,25 +144,25 @@ async function generateTiles(message: GenerateMessage) {
         })
       }
       
-      // 進捗通知（60%から90%まで）
+      // Progress notification (60% to 90%)
       const progress = 60 + Math.floor((i / result.count()) * 30)
       postMessage({ type: 'progress', value: progress } as ProgressMessage)
     }
     
     console.log(`[Worker] Collected ${tiles.length} tile files`)
     
-    // メタデータを取得
+    // Get metadata
     const metadata = result.get_metadata()
     console.log('[Worker] Metadata:', metadata)
     
-    // TileJSONを生成
+    // Generate TileJSON
     const tilejson = generateTileJSON(metadata, minZoom, maxZoom, layerName)
     console.log('[Worker] Generated TileJSON')
     
-    // 完了
+    // Complete
     postMessage({ type: 'progress', value: 100 } as ProgressMessage)
     
-    // 結果を送信
+    // Send result
     postMessage({
       type: 'result-pbf',
       tiles,
@@ -174,7 +174,7 @@ async function generateTiles(message: GenerateMessage) {
     
     const errorMessage = error instanceof Error 
       ? error.message 
-      : 'タイル生成中にエラーが発生しました'
+      : 'An error occurred during tile generation'
     
     postMessage({
       type: 'error',
@@ -183,7 +183,7 @@ async function generateTiles(message: GenerateMessage) {
   }
 }
 
-// Workerメッセージハンドラ
+// Worker message handler
 self.onmessage = async (event: MessageEvent<GenerateMessage>) => {
   const message = event.data
   
@@ -194,5 +194,5 @@ self.onmessage = async (event: MessageEvent<GenerateMessage>) => {
   }
 }
 
-// Worker起動完了通知
+// Worker startup complete notification
 console.log('[Worker] Tile generation worker ready')

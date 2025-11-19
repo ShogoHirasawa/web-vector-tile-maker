@@ -1,15 +1,15 @@
-// GeoJSON解析モジュール
+// GeoJSON parsing module
 use geojson::{GeoJson, FeatureCollection, Geometry, Value};
 use geo_types::{Point, LineString, Polygon, Coord};
 
-/// パースされたフィーチャを表す構造体
+/// Parsed feature structure
 #[derive(Debug, Clone)]
 pub struct Feature {
     pub geometry: GeometryType,
     pub properties: serde_json::Map<String, serde_json::Value>,
 }
 
-/// サポートするジオメトリタイプ
+/// Supported geometry types
 #[derive(Debug, Clone)]
 pub enum GeometryType {
     Point(Point<f64>),
@@ -17,13 +17,13 @@ pub enum GeometryType {
     Polygon(Polygon<f64>),
 }
 
-/// GeoJSONバイトからフィーチャを解析
+/// Parse features from GeoJSON bytes
 pub fn parse_geojson(bytes: &[u8]) -> Result<Vec<Feature>, String> {
     let geojson_str = std::str::from_utf8(bytes)
-        .map_err(|e| format!("UTF-8変換エラー: {}", e))?;
+        .map_err(|e| format!("UTF-8 conversion error: {}", e))?;
     
     let geojson = geojson_str.parse::<GeoJson>()
-        .map_err(|e| format!("GeoJSON解析エラー: {}", e))?;
+        .map_err(|e| format!("GeoJSON parse error: {}", e))?;
     
     match geojson {
         GeoJson::FeatureCollection(fc) => parse_feature_collection(fc),
@@ -31,7 +31,7 @@ pub fn parse_geojson(bytes: &[u8]) -> Result<Vec<Feature>, String> {
             let features = vec![parse_feature(f)?];
             Ok(features)
         }
-        _ => Err("サポートされていないGeoJSON形式です".to_string()),
+        _ => Err("Unsupported GeoJSON format".to_string()),
     }
 }
 
@@ -41,12 +41,12 @@ fn parse_feature_collection(fc: FeatureCollection) -> Result<Vec<Feature>, Strin
     for feature in fc.features {
         match parse_feature(feature) {
             Ok(f) => features.push(f),
-            Err(e) => eprintln!("フィーチャ解析警告: {}", e),
+            Err(e) => eprintln!("Feature parse warning: {}", e),
         }
     }
     
     if features.is_empty() {
-        return Err("有効なフィーチャが見つかりませんでした".to_string());
+        return Err("No valid features found".to_string());
     }
     
     Ok(features)
@@ -54,7 +54,7 @@ fn parse_feature_collection(fc: FeatureCollection) -> Result<Vec<Feature>, Strin
 
 fn parse_feature(feature: geojson::Feature) -> Result<Feature, String> {
     let geometry = feature.geometry
-        .ok_or("ジオメトリがありません")?;
+        .ok_or("No geometry")?;
     
     let geometry_type = parse_geometry(geometry)?;
     
@@ -82,16 +82,16 @@ fn parse_geometry(geometry: Geometry) -> Result<GeometryType, String> {
         }
         Value::Polygon(rings) => {
             if rings.is_empty() {
-                return Err("空のポリゴンです".to_string());
+                return Err("Empty polygon".to_string());
             }
             
-            // 外側のリング
+            // Exterior ring
             let exterior: Vec<Coord<f64>> = rings[0]
                 .iter()
                 .map(|c| Coord { x: c[0], y: c[1] })
                 .collect();
             
-            // 内側のリング（穴）
+            // Interior rings (holes)
             let interiors: Vec<LineString<f64>> = rings[1..]
                 .iter()
                 .map(|ring| {
@@ -108,14 +108,14 @@ fn parse_geometry(geometry: Geometry) -> Result<GeometryType, String> {
                 interiors,
             )))
         }
-        _ => Err(format!("サポートされていないジオメトリタイプ: {:?}", geometry.value)),
+        _ => Err(format!("Unsupported geometry type: {:?}", geometry.value)),
     }
 }
 
-/// GeoJSONフィーチャからbounds（境界ボックス）を計算
+/// Calculate bounds (bounding box) from GeoJSON features
 pub fn calculate_bounds(features: &[Feature]) -> Result<(f64, f64, f64, f64), String> {
     if features.is_empty() {
-        return Err("フィーチャが空です".to_string());
+        return Err("Features are empty".to_string());
     }
     
     let mut min_lon = f64::INFINITY;
@@ -155,7 +155,7 @@ pub fn calculate_bounds(features: &[Feature]) -> Result<(f64, f64, f64, f64), St
     Ok((min_lon, min_lat, max_lon, max_lat))
 }
 
-/// boundsから中心座標を計算
+/// Calculate center coordinates from bounds
 pub fn calculate_center(bounds: (f64, f64, f64, f64)) -> (f64, f64) {
     let (min_lon, min_lat, max_lon, max_lat) = bounds;
     let center_lon = (min_lon + max_lon) / 2.0;

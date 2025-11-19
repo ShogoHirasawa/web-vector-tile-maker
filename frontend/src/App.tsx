@@ -22,7 +22,7 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const workerRef = useRef<Worker | null>(null)
 
-  // WebWorker初期化
+  // Initialize WebWorker
   useEffect(() => {
     workerRef.current = new Worker(new URL('./worker.ts', import.meta.url), {
       type: 'module',
@@ -43,7 +43,7 @@ function App() {
 
     workerRef.current.onerror = (error) => {
       console.error('Worker error:', error)
-      setError('Workerでエラーが発生しました')
+      setError('An error occurred in Worker')
       setIsProcessing(false)
     }
 
@@ -52,26 +52,26 @@ function App() {
     }
   }, [])
 
-  // タイル生成完了時の処理
+  // Handle tile generation completion
   const handleTilesGenerated = async (tiles: Array<{ path: string; bytes: Uint8Array }>, tilejson: string) => {
     try {
       console.log(`Generating ZIP with ${tiles.length} tiles...`)
       
-      // ZIPファイルを作成
+      // Create ZIP file
       const zip = new JSZip()
       
-      // metadata.json を追加（tippecanoe形式）
+      // Add metadata.json (tippecanoe format)
       zip.file('metadata.json', tilejson)
       
-      // タイルを追加
+      // Add tiles
       for (const tile of tiles) {
         zip.file(tile.path, tile.bytes)
       }
       
-      // ZIPを生成
+      // Generate ZIP
       const blob = await zip.generateAsync({ type: 'blob' })
       
-      // ダウンロード
+      // Download
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -85,7 +85,7 @@ function App() {
       setIsProcessing(false)
     } catch (err) {
       console.error('Error creating ZIP:', err)
-      setError('ZIPファイルの作成に失敗しました')
+      setError('Failed to create ZIP file')
       setIsProcessing(false)
     }
   }
@@ -100,12 +100,12 @@ function App() {
 
   const handleGenerate = async () => {
     if (!file) {
-      setError('GeoJSONファイルを選択してください')
+      setError('Please select a GeoJSON file')
       return
     }
 
     if (!workerRef.current) {
-      setError('Workerが初期化されていません')
+      setError('Worker is not initialized')
       return
     }
 
@@ -119,10 +119,10 @@ function App() {
         settings,
       })
 
-      // ファイルをArrayBufferとして読み込み
+      // Read file as ArrayBuffer
       const arrayBuffer = await file.arrayBuffer()
 
-      // Workerにメッセージを送信
+      // Send message to Worker
       workerRef.current.postMessage({
         type: 'generate',
         payload: {
@@ -135,7 +135,7 @@ function App() {
       })
     } catch (err) {
       console.error('Error reading file:', err)
-      setError(err instanceof Error ? err.message : 'ファイルの読み込みに失敗しました')
+      setError(err instanceof Error ? err.message : 'Failed to read file')
       setIsProcessing(false)
     }
   }
@@ -144,12 +144,12 @@ function App() {
     <div className="container">
       <header>
         <h1>🗺️ Vector Tile Builder</h1>
-        <p>ブラウザ上でベクタータイルを生成</p>
+        <p>Generate vector tiles in your browser</p>
       </header>
 
       <main>
         <section className="upload-section">
-          <h2>1. GeoJSONファイルを選択</h2>
+          <h2>1. Select GeoJSON File</h2>
           <input
             type="file"
             accept=".geojson,.json"
@@ -164,11 +164,11 @@ function App() {
         </section>
 
         <section className="settings-section">
-          <h2>2. 設定</h2>
+          <h2>2. Settings</h2>
           
           <div className="form-group">
             <label>
-              最小ズームレベル:
+              Minimum Zoom Level:
               <input
                 type="number"
                 min="0"
@@ -184,7 +184,7 @@ function App() {
 
           <div className="form-group">
             <label>
-              最大ズームレベル:
+              Maximum Zoom Level:
               <input
                 type="number"
                 min="0"
@@ -200,7 +200,7 @@ function App() {
 
           <div className="form-group">
             <label>
-              レイヤー名:
+              Layer Name:
               <input
                 type="text"
                 value={settings.layerName}
@@ -214,7 +214,7 @@ function App() {
 
           <div className="form-group">
             <label>
-              出力形式:
+              Output Format:
               <select
                 value={settings.format}
                 onChange={(e) =>
@@ -222,8 +222,8 @@ function App() {
                 }
                 disabled={isProcessing}
               >
-                <option value="pbf">.pbf (ディレクトリ構造)</option>
-                <option value="pmtiles">.pmtiles (単一ファイル) - 未実装</option>
+                <option value="pbf">.pbf (Directory structure)</option>
+                <option value="pmtiles">.pmtiles (Single file) - Not implemented</option>
               </select>
             </label>
           </div>
@@ -235,7 +235,7 @@ function App() {
             disabled={!file || isProcessing}
             className="generate-button"
           >
-            {isProcessing ? '生成中...' : 'タイルを生成'}
+            {isProcessing ? 'Generating...' : 'Generate Tiles'}
           </button>
 
           {isProcessing && (
@@ -249,16 +249,16 @@ function App() {
         </section>
 
         <section className="info-section">
-          <h2>📝 使い方</h2>
+          <h2>📝 How to Use</h2>
           <ol>
-            <li>GeoJSONファイルを選択（Point, LineString, Polygon対応）</li>
-            <li>ズームレベルとレイヤー名を設定</li>
-            <li>「タイルを生成」ボタンをクリック</li>
-            <li>生成されたタイルがダウンロードされます</li>
+            <li>Select a GeoJSON file (supports Point, LineString, Polygon)</li>
+            <li>Configure zoom levels and layer name</li>
+            <li>Click "Generate Tiles" button</li>
+            <li>Download the generated tiles</li>
           </ol>
           
           <p className="note">
-            ✅ Wasm統合完了！ブラウザ上でベクタータイルを生成できます。
+            ✅ Wasm integration complete! Generate vector tiles in your browser.
           </p>
         </section>
       </main>

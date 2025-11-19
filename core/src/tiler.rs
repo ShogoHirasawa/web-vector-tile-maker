@@ -1,5 +1,5 @@
-// タイル振り分けモジュール
-// フィーチャを各タイルに振り分け、タイル内座標に変換
+// Tile assignment module
+// Assign features to tiles and convert to tile coordinates
 
 use crate::geojson_parser::{Feature, GeometryType};
 use crate::projection::{lonlat_to_tile, lonlat_to_meters, meters_to_pixel_in_tile, tile_bounds};
@@ -7,25 +7,25 @@ use crate::TileCoord;
 use std::collections::HashMap;
 use geo_types::{Point, LineString, Polygon, Coord};
 
-/// タイル内フィーチャ
+/// Feature within tile
 #[derive(Debug, Clone)]
 pub struct TileFeature {
     pub geometry: TileGeometry,
     pub properties: serde_json::Map<String, serde_json::Value>,
 }
 
-/// タイル内ジオメトリ（タイル座標系：0-4096）
+/// Geometry within tile (tile coordinate system: 0-4096)
 #[derive(Debug, Clone)]
 pub enum TileGeometry {
     Point(i32, i32),
     LineString(Vec<(i32, i32)>),
-    Polygon(Vec<Vec<(i32, i32)>>), // 外側リング + 内側リング（穴）
+    Polygon(Vec<Vec<(i32, i32)>>), // Exterior ring + interior rings (holes)
 }
 
-/// MVT仕様のエクステント（タイル内座標の範囲）
+/// MVT extent (tile coordinate range)
 const EXTENT: i32 = 4096;
 
-/// フィーチャをタイルに振り分け
+/// Assign features to tiles
 pub fn tile_features(
     features: &[Feature],
     zoom: u8,
@@ -49,7 +49,7 @@ pub fn tile_features(
     Ok(tiles)
 }
 
-/// Pointをタイルに追加
+/// Add Point to tile
 fn tile_point(
     point: &Point<f64>,
     properties: &serde_json::Map<String, serde_json::Value>,
@@ -59,20 +59,20 @@ fn tile_point(
     let lon = point.x();
     let lat = point.y();
     
-    // タイル座標を取得
+    // Get tile coordinates
     let (tx, ty) = lonlat_to_tile(lon, lat, zoom);
     
-    // WebMercatorメートル座標に変換
+    // Convert to WebMercator meters
     let (mx, my) = lonlat_to_meters(lon, lat);
     
-    // タイル内ピクセル座標に変換
+    // Convert to pixel coordinates within tile
     let (px, py) = meters_to_pixel_in_tile(mx, my, tx, ty, zoom);
     
-    // MVTエクステント座標に変換（0-4096）
+    // Convert to MVT extent coordinates (0-4096)
     let tile_x = ((px / 256.0) * EXTENT as f64) as i32;
     let tile_y = ((py / 256.0) * EXTENT as f64) as i32;
     
-    // タイルに追加
+    // Add to tile
     let coord = TileCoord::new(zoom, tx, ty);
     let tile_feature = TileFeature {
         geometry: TileGeometry::Point(tile_x, tile_y),
@@ -84,7 +84,7 @@ fn tile_point(
     Ok(())
 }
 
-/// LineStringをタイルに追加（複数タイル対応）
+/// Add LineString to tiles (supports multiple tiles)
 fn tile_linestring(
     line: &LineString<f64>,
     properties: &serde_json::Map<String, serde_json::Value>,
@@ -95,17 +95,17 @@ fn tile_linestring(
         return Ok(());
     }
     
-    // LineStringのbounding boxを計算
+    // Calculate bounding box of LineString
     let (min_lon, min_lat, max_lon, max_lat) = linestring_bounds(line);
     
-    // 交差するタイルの範囲を取得
+    // Get range of intersecting tiles
     let (tx_min, ty_max) = lonlat_to_tile(min_lon, min_lat, zoom);
     let (tx_max, ty_min) = lonlat_to_tile(max_lon, max_lat, zoom);
     
-    // 各タイルにLineStringを配置
+    // Place LineString in each tile
     for tx in tx_min..=tx_max {
         for ty in ty_min..=ty_max {
-            // 全座標をこのタイル内座標に変換
+            // Convert all coordinates to this tile's coordinate system
             let mut tile_coords = Vec::new();
             for coord in &line.0 {
                 let (mx, my) = lonlat_to_meters(coord.x, coord.y);
@@ -117,7 +117,7 @@ fn tile_linestring(
                 tile_coords.push((tile_x, tile_y));
             }
             
-            // タイルに追加
+            // Add to tile
             let coord = TileCoord::new(zoom, tx, ty);
             let tile_feature = TileFeature {
                 geometry: TileGeometry::LineString(tile_coords),
@@ -131,7 +131,7 @@ fn tile_linestring(
     Ok(())
 }
 
-/// Polygonをタイルに追加（複数タイル対応）
+/// Add Polygon to tiles (supports multiple tiles)
 fn tile_polygon(
     polygon: &Polygon<f64>,
     properties: &serde_json::Map<String, serde_json::Value>,
@@ -143,17 +143,17 @@ fn tile_polygon(
         return Ok(());
     }
     
-    // Polygonのbounding boxを計算
+    // Calculate bounding box of Polygon
     let (min_lon, min_lat, max_lon, max_lat) = polygon_bounds(polygon);
     
-    // 交差するタイルの範囲を取得
+    // Get range of intersecting tiles
     let (tx_min, ty_max) = lonlat_to_tile(min_lon, min_lat, zoom);
     let (tx_max, ty_min) = lonlat_to_tile(max_lon, max_lat, zoom);
     
-    // 各タイルにPolygonを配置
+    // Place Polygon in each tile
     for tx in tx_min..=tx_max {
         for ty in ty_min..=ty_max {
-            // 外側リングを変換
+            // Convert exterior ring
             let mut tile_rings = Vec::new();
             let mut exterior_ring = Vec::new();
             
@@ -168,7 +168,7 @@ fn tile_polygon(
             }
             tile_rings.push(exterior_ring);
             
-            // 内側リング（穴）を変換
+            // Convert interior rings (holes)
             for interior in polygon.interiors() {
                 let mut interior_ring = Vec::new();
                 for coord in &interior.0 {
@@ -183,7 +183,7 @@ fn tile_polygon(
                 tile_rings.push(interior_ring);
             }
             
-            // タイルに追加
+            // Add to tile
             let coord = TileCoord::new(zoom, tx, ty);
             let tile_feature = TileFeature {
                 geometry: TileGeometry::Polygon(tile_rings),
@@ -197,7 +197,7 @@ fn tile_polygon(
     Ok(())
 }
 
-/// LineStringのbounding boxを計算
+/// Calculate LineString bounding box
 fn linestring_bounds(line: &LineString<f64>) -> (f64, f64, f64, f64) {
     let mut min_lon = f64::INFINITY;
     let mut min_lat = f64::INFINITY;
@@ -214,14 +214,14 @@ fn linestring_bounds(line: &LineString<f64>) -> (f64, f64, f64, f64) {
     (min_lon, min_lat, max_lon, max_lat)
 }
 
-/// Polygonのbounding boxを計算
+/// Calculate Polygon bounding box
 fn polygon_bounds(polygon: &Polygon<f64>) -> (f64, f64, f64, f64) {
     let mut min_lon = f64::INFINITY;
     let mut min_lat = f64::INFINITY;
     let mut max_lon = f64::NEG_INFINITY;
     let mut max_lat = f64::NEG_INFINITY;
     
-    // 外側リング
+    // Exterior ring
     for coord in &polygon.exterior().0 {
         min_lon = min_lon.min(coord.x);
         min_lat = min_lat.min(coord.y);

@@ -1,16 +1,16 @@
 // WebAssembly API
-// ブラウザから呼び出されるWasm関数
+// Wasm functions called from browser
 
 use wasm_bindgen::prelude::*;
 use crate::generate_tiles_with_metadata;
 
-/// Wasmパニック時のフック設定
+/// Set panic hook for Wasm
 #[wasm_bindgen(start)]
 pub fn init_panic_hook() {
     console_error_panic_hook::set_once();
 }
 
-/// タイル生成結果（メタデータ付き）
+/// Tile generation result (with metadata)
 #[wasm_bindgen]
 pub struct TileResult {
     tiles: Vec<TileData>,
@@ -19,22 +19,22 @@ pub struct TileResult {
 
 #[wasm_bindgen]
 impl TileResult {
-    /// タイル数を取得
+    /// Get tile count
     pub fn count(&self) -> usize {
         self.tiles.len()
     }
     
-    /// 指定されたインデックスのタイルパスを取得
+    /// Get tile path at specified index
     pub fn get_path(&self, index: usize) -> Option<String> {
         self.tiles.get(index).map(|t| t.path.clone())
     }
     
-    /// 指定されたインデックスのタイルデータを取得
+    /// Get tile data at specified index
     pub fn get_data(&self, index: usize) -> Option<Vec<u8>> {
         self.tiles.get(index).map(|t| t.data.clone())
     }
     
-    /// メタデータを取得
+    /// Get metadata
     pub fn get_metadata(&self) -> JsValue {
         serde_wasm_bindgen::to_value(&self.metadata).unwrap_or(JsValue::NULL)
     }
@@ -55,16 +55,16 @@ struct MetadataData {
     center: (f64, f64),
 }
 
-/// GeoJSONからベクタータイルを生成（Wasm向け、メタデータ付き）
+/// Generate vector tiles from GeoJSON (for Wasm, with metadata)
 /// 
 /// # Arguments
-/// * `geojson_bytes` - GeoJSONのバイト配列
-/// * `min_zoom` - 最小ズームレベル
-/// * `max_zoom` - 最大ズームレベル
-/// * `layer_name` - レイヤー名
+/// * `geojson_bytes` - GeoJSON byte array
+/// * `min_zoom` - Minimum zoom level
+/// * `max_zoom` - Maximum zoom level
+/// * `layer_name` - Layer name
 /// 
 /// # Returns
-/// * `Result<TileResult, JsValue>` - 成功時はTileResult、失敗時はエラーメッセージ
+/// * `Result<TileResult, JsValue>` - TileResult on success, error message on failure
 #[wasm_bindgen]
 pub fn generate_pbf_tiles(
     geojson_bytes: &[u8],
@@ -72,11 +72,11 @@ pub fn generate_pbf_tiles(
     max_zoom: u8,
     layer_name: &str,
 ) -> Result<TileResult, JsValue> {
-    // タイル生成（メタデータ付き）
+    // Generate tiles (with metadata)
     let (tiles, metadata) = generate_tiles_with_metadata(geojson_bytes, min_zoom, max_zoom, layer_name)
         .map_err(|e| JsValue::from_str(&e))?;
     
-    // Wasm用のデータ構造に変換
+    // Convert to Wasm data structure
     let tile_data: Vec<TileData> = tiles
         .into_iter()
         .map(|tile| TileData {
@@ -99,14 +99,14 @@ pub fn generate_pbf_tiles(
     })
 }
 
-/// ログ出力（デバッグ用）
+/// Log output (for debugging)
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
 }
 
-/// デバッグログを出力
+/// Output debug log
 #[wasm_bindgen]
 pub fn debug_log(message: &str) {
     log(message);
@@ -118,7 +118,7 @@ mod tests {
 
     #[test]
     fn test_wasm_api_structure() {
-        // 基本的な構造テスト
+        // Basic structure test
         let tile_data = vec![
             TileData {
                 path: "0/0/0.pbf".to_string(),

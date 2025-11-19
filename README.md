@@ -1,139 +1,141 @@
 # Vector Tile Builder
 
-ブラウザ上でベクタータイル (.pbf / .pmtiles) を生成する Web アプリ
+A web application for generating vector tiles (.pbf / .pmtiles) in the browser
 
-## 🎯 概要
+## 🎯 Overview
 
-完全クライアントサイドで動作するベクタータイル生成ツールです。
-GeoJSON をアップロードし、ブラウザ内でタイルに変換してダウンロードできます。
+A completely client-side vector tile generation tool.
+Upload GeoJSON and convert it to tiles directly in your browser for download.
 
-## 🏗 技術スタック
+## 🏗 Technology Stack
 
-- **Rust + WebAssembly**: タイル生成のコア処理
-- **React + TypeScript + Vite**: フロントエンド UI
-- **MapLibre GL JS**: マップ表示（プレビュー機能）
+- **Rust + WebAssembly**: Core tile generation processing
+- **React + TypeScript + Vite**: Frontend UI
+- **MapLibre GL JS**: Map display (preview feature)
 
-## 📦 プロジェクト構成
+## 📦 Project Structure
 
 ```
-vector tile builder/
-├─ core/                     # Rust（Wasmコア）
+web-vector-tile-maker/
+├─ core/                     # Rust (Wasm core)
 │   ├─ Cargo.toml
 │   ├─ build.rs
-│   ├─ proto/                # Protocol Buffer定義
+│   ├─ proto/                # Protocol Buffer definitions
 │   └─ src/
-│       ├─ lib.rs            # メインライブラリ
-│       ├─ geojson_parser.rs # GeoJSON解析
-│       ├─ projection.rs     # 座標投影
-│       ├─ tiler.rs          # タイル振り分け
-│       ├─ mvt_encoder.rs    # MVTエンコーダー
+│       ├─ lib.rs            # Main library
+│       ├─ geojson_parser.rs # GeoJSON parsing
+│       ├─ projection.rs     # Coordinate projection
+│       ├─ tiler.rs          # Tile assignment
+│       ├─ mvt_encoder.rs    # MVT encoder
 │       └─ bin/
-│           └─ cli.rs        # CLIツール（テスト用）
-├─ frontend/                 # Reactアプリ
+│           └─ cli.rs        # CLI tool (for testing)
+├─ frontend/                 # React app
 │   ├─ package.json
 │   ├─ vite.config.ts
 │   └─ src/
 │       ├─ main.tsx
 │       ├─ App.tsx
 │       └─ worker.ts         # WebWorker
-├─ test_data/                # テスト用データ
+├─ test_data/                # Test data
 │   └─ points.geojson
-└─ docs/                     # GitHub Pages 公開ディレクトリ（ビルド後生成）
+└─ .github/
+    └─ workflows/
+        └─ deploy.yml        # GitHub Actions CI/CD
 ```
 
-## 🚀 セットアップ
+## 🚀 Setup
 
-### 1. Rustのインストール
+### 1. Install Rust
 
 ```bash
-# rustupをインストール
+# Install rustup
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-# パスを通す
+# Add to PATH
 source $HOME/.cargo/env
 
-# WebAssemblyターゲットを追加
+# Add WebAssembly target
 rustup target add wasm32-unknown-unknown
 
-# wasm-bindgen-cliをインストール
+# Install wasm-bindgen-cli
 cargo install wasm-bindgen-cli
 ```
 
-### 2. Node.jsのインストール
+### 2. Install Node.js
 
-Node.js 18以上が必要です。
+Node.js 18 or higher is required.
 
 ```bash
-# Homebrewを使用する場合（macOS）
+# Using Homebrew (macOS)
 brew install node
 
-# または公式サイトからダウンロード
+# Or download from official website
 # https://nodejs.org/
 ```
 
-## 🧪 フェーズ1: Rust CLIでのテスト
+## 🧪 Phase 1: Testing with Rust CLI
 
-### ビルド
+### Build
 
 ```bash
 cd core
 cargo build --release
 ```
 
-### CLIツールの実行
+### Run CLI Tool
 
 ```bash
-# 使用方法
+# Usage
 cargo run --bin cli <geojson_file> <output_dir> <min_zoom> <max_zoom> [layer_name]
 
-# 例: test_data/points.geojson からズームレベル0-5のタイルを生成
+# Example: Generate zoom level 0-5 tiles from test_data/points.geojson
 cargo run --bin cli ../test_data/points.geojson ../test_output 0 5 cities
 
-# 結果はtest_output/ディレクトリに保存されます
+# Results are saved in test_output/ directory
 # test_output/0/0/0.pbf
 # test_output/1/0/0.pbf
 # ...
 ```
 
-### テストの実行
+### Run Tests
 
 ```bash
 cd core
 cargo test
 ```
 
-## 🌐 フェーズ2: Wasm化 + Webアプリ
+## 🌐 Phase 2: Wasm + Web App
 
-### ローカル開発
+### Local Development
 
 ```bash
-# 1. Wasmビルド
+# 1. Build Wasm
 cd core
 wasm-pack build --target web --out-dir ../frontend/src/wasm
 
-# 2. フロントエンド起動
+# 2. Start frontend
 cd ../frontend
 npm install
 npm run dev
 ```
 
-ブラウザで http://localhost:5173 を開く
+Open http://localhost:5173 in your browser
 
-### プロダクションビルド
+### Production Build
 
 ```bash
-# Wasmビルド
+# Build Wasm
 cd core
 wasm-pack build --target web --out-dir ../frontend/src/wasm
 
-# フロントエンドビルド
+# Build frontend
 cd ../frontend
 npm run build
 
-# 結果は frontend/dist/ に出力されます
+# Output is in frontend/dist/
 ```
 
-### GitHub Pagesへのデプロイ
+### Deploy to GitHub Pages
 
 ```bash
 git add .
@@ -141,58 +143,56 @@ git commit -m "Update build"
 git push origin main
 ```
 
-GitHub Actionsが自動的にビルド＆デプロイを実行します。
-デプロイ後、以下のURLでアクセスできます:
+GitHub Actions will automatically build and deploy.
+After deployment, access at:
 https://shogohirasawa.github.io/web-vector-tile-maker/
 
-## 📝 サポートするGeoJSON形式
+## 📝 Supported GeoJSON Format
 
-- **入力**: FeatureCollection
-- **ジオメトリタイプ**: 
+- **Input**: FeatureCollection
+- **Geometry Types**: 
   - ✅ Point
   - ✅ LineString
   - ✅ Polygon
-  - ⏳ MultiPoint / MultiLineString / MultiPolygon（将来対応予定）
+  - ⏳ MultiPoint / MultiLineString / MultiPolygon (planned)
 
-## 🎛 出力形式
+## 🎛 Output Formats
 
-- **MVT (.pbf)**: ディレクトリ構造 `{z}/{x}/{y}.pbf`
-- **PMTiles**: 単一ファイル（将来対応予定）
+- **MVT (.pbf)**: Directory structure `{z}/{x}/{y}.pbf`
+- **PMTiles**: Single file (planned)
 
-## 📊 対応ズームレベル
+## 📊 Supported Zoom Levels
 
-- ZL 0 〜 15
+- ZL 0 ~ 15
 
-## 🔧 開発状況
+## 🔧 Development Status
 
-### ✅ 完了
+### ✅ Completed
 
-- [x] プロジェクト構造の初期化
-- [x] Rustコアモジュールの実装
-  - [x] GeoJSON解析
-  - [x] 座標投影（WGS84 → WebMercator）
-  - [x] タイル振り分け
-  - [x] MVTエンコーダー
-- [x] CLIツールの実装
+- [x] Project structure initialization
+- [x] Rust core module implementation
+  - [x] GeoJSON parsing
+  - [x] Coordinate projection (WGS84 → WebMercator)
+  - [x] Tile assignment
+  - [x] MVT encoder
+- [x] CLI tool implementation
+- [x] Wasm integration
+- [x] React UI implementation
+- [x] WebWorker integration
+- [x] GitHub Pages deployment
 
-### 🚧 作業中
+### 📋 Future Plans
 
-- [ ] Wasm化
-- [ ] React UIの実装
-- [ ] WebWorker統合
+- [ ] Improve tile boundary clipping for LineString/Polygon
+- [ ] Memory optimization for large datasets
+- [ ] PMTiles format support
+- [ ] MapLibre preview feature
+- [ ] Drag & drop file upload
 
-### 📋 今後の予定
-
-- [ ] LineString/Polygonのタイル境界クリッピング改善
-- [ ] メモリ最適化
-- [ ] PMTiles形式対応
-- [ ] MapLibreプレビュー機能
-- [ ] GitHub Pagesデプロイ
-
-## 📄 ライセンス
+## 📄 License
 
 MIT License
 
-## 🤝 貢献
+## 🤝 Contributing
 
-Issue や Pull Request を歓迎します！
+Issues and Pull Requests are welcome!
