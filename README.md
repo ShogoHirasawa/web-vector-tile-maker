@@ -1,6 +1,6 @@
 # Vector Tile Builder
 
-A web application for generating vector tiles (.pbf / .pmtiles) in the browser
+A web application for generating vector tiles (.pbf / .pmtiles(In Progress)) in the browser
 
 ## 🎯 Overview
 
@@ -134,31 +134,19 @@ npm run build
 # Output is in frontend/dist/
 ```
 
-### Deploy to GitHub Pages
-
-```bash
-git add .
-git commit -m "Update build"
-git push origin main
-```
-
-GitHub Actions will automatically build and deploy.
-After deployment, access at:
-https://shogohirasawa.github.io/web-vector-tile-maker/
-
 ## 📝 Supported GeoJSON Format
 
 - **Input**: FeatureCollection
-- **Geometry Types**: 
+- **Geometry Types**:
   - ✅ Point
   - ✅ LineString
   - ✅ Polygon
-  - ⏳ MultiPoint / MultiLineString / MultiPolygon (planned)
+  - ⏳ MultiPoint / MultiLineString / MultiPolygon (In Progress)
 
 ## 🎛 Output Formats
 
 - **MVT (.pbf)**: Directory structure `{z}/{x}/{y}.pbf`
-- **PMTiles**: Single file (planned)
+- **PMTiles**: Single file (In Progress)
 
 ## 📊 Supported Zoom Levels
 
@@ -166,26 +154,10 @@ https://shogohirasawa.github.io/web-vector-tile-maker/
 
 ## 🔧 Development Status
 
-### ✅ Completed
-
-- [x] Project structure initialization
-- [x] Rust core module implementation
-  - [x] GeoJSON parsing
-  - [x] Coordinate projection (WGS84 → WebMercator)
-  - [x] Tile assignment
-  - [x] MVT encoder
-- [x] CLI tool implementation
-- [x] Wasm integration
-- [x] React UI implementation
-- [x] WebWorker integration
-- [x] GitHub Pages deployment
-
 ### 📋 Future Plans
 
-- [ ] Improve tile boundary clipping for LineString/Polygon
-- [ ] Memory optimization for large datasets
 - [ ] PMTiles format support
-- [ ] MapLibre preview feature
+- [ ] Data preview feature
 - [ ] Drag & drop file upload
 
 ## 📄 License
