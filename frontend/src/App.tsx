@@ -1,12 +1,22 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import JSZip from "jszip";
 import "./App.css";
+import MapPreview from "./MapPreview.tsx";
+import { setTileStore, type TileStore } from "./tileStore";
 
 interface GenerationSettings {
   minZoom: number;
   maxZoom: number;
   layerName: string;
   format: "pbf" | "pmtiles";
+}
+
+interface PreviewData {
+  center: [number, number];
+  zoom: number;
+  layerName: string;
+  minZoom: number;
+  maxZoom: number;
 }
 
 function App() {
@@ -20,6 +30,11 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [previewData, setPreviewData] = useState<PreviewData | null>(null);
+  const [generatedTiles, setGeneratedTiles] = useState<{
+    tiles: Array<{ path: string; bytes: Uint8Array }>;
+    tilejson: string;
+  } | null>(null);
   const workerRef = useRef<Worker | null>(null);
 
   // Handle tile generation completion
@@ -28,8 +43,51 @@ function App() {
     tilejson: string
   ) => {
     try {
-      console.log(`Generating ZIP with ${tiles.length} tiles...`);
+      // Build tile store for preview
+      const tileStore: TileStore = new Map();
+      for (const tile of tiles) {
+        // Convert path "z/x/y.pbf" to key "z/x/y"
+        const key = tile.path.replace('.pbf', '');
+        tileStore.set(key, tile.bytes);
+      }
+      
+      // Set tile store for MapLibre
+      setTileStore(tileStore);
 
+      // Parse metadata and create preview configuration
+      const metadata = JSON.parse(tilejson);
+      const center = metadata.center
+        ? metadata.center.split(',').map(Number).slice(0, 2)
+        : [0, 0];
+      const centerZoom = Math.floor((settings.minZoom + settings.maxZoom) / 2);
+
+      setPreviewData({
+        center: center as [number, number],
+        zoom: centerZoom,
+        layerName: settings.layerName,
+        minZoom: settings.minZoom,
+        maxZoom: settings.maxZoom,
+      });
+
+      // Save tile data for download button
+      setGeneratedTiles({ tiles, tilejson });
+
+      setIsProcessing(false);
+    } catch (err) {
+      console.error("Error processing tiles:", err);
+      setError("Failed to process tiles");
+      setIsProcessing(false);
+    }
+  }, [settings]);
+
+  // Handle ZIP download
+  const handleDownloadZip = useCallback(async () => {
+    if (!generatedTiles) {
+      setError("No tiles generated yet");
+      return;
+    }
+
+    try {
       // Create ZIP file
       const zip = new JSZip();
 
@@ -37,10 +95,10 @@ function App() {
       const folderName = `tiles_${settings.layerName}_${settings.minZoom}-${settings.maxZoom}`;
 
       // Add metadata.json (tippecanoe format) inside the folder
-      zip.file(`${folderName}/metadata.json`, tilejson);
+      zip.file(`${folderName}/metadata.json`, generatedTiles.tilejson);
 
       // Add tiles inside the folder
-      for (const tile of tiles) {
+      for (const tile of generatedTiles.tiles) {
         zip.file(`${folderName}/${tile.path}`, tile.bytes);
       }
 
@@ -56,15 +114,11 @@ function App() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-
-      console.log("Download started!");
-      setIsProcessing(false);
     } catch (err) {
       console.error("Error creating ZIP:", err);
       setError("Failed to create ZIP file");
-      setIsProcessing(false);
     }
-  }, [settings]);
+  }, [generatedTiles, settings]);
 
   // Initialize WebWorker
   useEffect(() => {
@@ -120,11 +174,6 @@ function App() {
     setError(null);
 
     try {
-      console.log("タイル生成開始:", {
-        file: file.name,
-        settings,
-      });
-
       // Read file as ArrayBuffer
       const arrayBuffer = await file.arrayBuffer();
 
@@ -281,6 +330,22 @@ function App() {
 
           {error && <div className="error-message">❌ {error}</div>}
         </section>
+
+        {previewData && (
+          <section className="preview-section">
+            <div className="preview-header">
+              <h2>3. Preview</h2>
+              <button 
+                onClick={handleDownloadZip} 
+                className="download-button"
+                disabled={!generatedTiles}
+              >
+                📦 Download ZIP
+              </button>
+            </div>
+            <MapPreview {...previewData} />
+          </section>
+        )}
       </main>
 
       <footer>
