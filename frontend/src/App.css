@@ -182,3 +182,11 @@ footer {
 .github-link span {
   font-family: monospace;
 }
+
+.preview-section {
+  margin-top: 2rem;
+}
+
+.preview-section h2 {
+  margin-bottom: 1.5rem;
+}

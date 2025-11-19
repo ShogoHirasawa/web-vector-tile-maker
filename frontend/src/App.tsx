@@ -1,12 +1,22 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import JSZip from "jszip";
 import "./App.css";
+import { MapPreview } from "./MapPreview";
+import { setTileStore, type TileStore } from "./tileStore";
 
 interface GenerationSettings {
   minZoom: number;
   maxZoom: number;
   layerName: string;
   format: "pbf" | "pmtiles";
+}
+
+interface PreviewData {
+  center: [number, number];
+  zoom: number;
+  layerName: string;
+  minZoom: number;
+  maxZoom: number;
 }
 
 function App() {
@@ -20,6 +30,7 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const workerRef = useRef<Worker | null>(null);
 
   // Handle tile generation completion
@@ -28,6 +39,37 @@ function App() {
     tilejson: string
   ) => {
     try {
+      console.log(`Processing ${tiles.length} tiles...`);
+
+      // 【新機能】tileStoreを構築してプレビュー表示
+      const tileStore: TileStore = new Map();
+      for (const tile of tiles) {
+        // path = "z/x/y.pbf" → key = "z/x/y"
+        const key = tile.path.replace('.pbf', '');
+        tileStore.set(key, tile.bytes);
+      }
+      
+      // tileStoreをセット
+      setTileStore(tileStore);
+      console.log(`[App] TileStore set with ${tileStore.size} tiles`);
+
+      // metadataを取得してプレビュー用データを作成
+      const metadata = JSON.parse(tilejson);
+      const center = metadata.center
+        ? metadata.center.split(',').map(Number).slice(0, 2)
+        : [0, 0];
+      const centerZoom = Math.floor((settings.minZoom + settings.maxZoom) / 2);
+
+      setPreviewData({
+        center: center as [number, number],
+        zoom: centerZoom,
+        layerName: settings.layerName,
+        minZoom: settings.minZoom,
+        maxZoom: settings.maxZoom,
+      });
+      console.log('[App] Preview data set:', { center, zoom: centerZoom });
+
+      // 【既存機能】ZIPダウンロード（変更なし）
       console.log(`Generating ZIP with ${tiles.length} tiles...`);
 
       // Create ZIP file
@@ -281,6 +323,13 @@ function App() {
 
           {error && <div className="error-message">❌ {error}</div>}
         </section>
+
+        {previewData && (
+          <section className="preview-section">
+            <h2>3. Preview</h2>
+            <MapPreview {...previewData} />
+          </section>
+        )}
       </main>
 
       <footer>
