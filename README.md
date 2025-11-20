@@ -158,6 +158,7 @@ npm run build
 
 - [ ] PMTiles format support
 - [ ] Drag & drop file upload
+- [ ] npm support
 
 ## 📄 License
 
