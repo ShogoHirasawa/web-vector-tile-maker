@@ -1,6 +1,7 @@
 # Rust
 /core/target/
 /core/Cargo.lock
+/core/pkg/
 **/*.rs.bk
 
 # Node.js
